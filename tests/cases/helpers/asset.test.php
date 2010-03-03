@@ -14,8 +14,8 @@ class AssetTestCase extends CakeTestCase {
   var $cssCache = null;
   
   function startCase() {
-    $this->testAppRoot = ROOT . DS . 'app' . DS . 'plugins' . DS . 'asset' . DS . 'tests' . DS . 'test_app' . DS;
-    $this->wwwRoot =  $this->testAppRoot . 'webroot' . DS;
+    $this->testAppRoot = App::pluginPath('Asset') . 'tests' . DS . 'test_app' . DS;
+    $this->wwwRoot = WWW_ROOT;
     $this->jsCache = $this->wwwRoot . 'cjs' . DS;
     $this->cssCache = $this->wwwRoot . 'ccss' . DS;
 
@@ -23,13 +23,12 @@ class AssetTestCase extends CakeTestCase {
     $this->View = new View($controller);
     
     $this->Asset = new AssetHelper(array('wwwRoot' => $this->wwwRoot, 'js' => $this->wwwRoot . 'js' . DS, 'css' => $this->wwwRoot . 'css' . DS));
-    $this->Asset->Javascript = new JavascriptHelper();
     $this->Asset->Html = new HtmlHelper();
-    
+
     $this->Folder = new Folder();
 
     $this->jsRoot =  $this->wwwRoot . 'js' . DS;
-    Configure::write('localePaths', array($this->testAppRoot . 'locale'));
+    App::build(array('localePaths' => array($this->testAppRoot . 'locale')));
     Configure::write('Js.paths', array('wwwRoot' => $this->wwwRoot,
                                        'js' => $this->jsRoot,
                                        'source' => $this->jsRoot . 'source' . DS));
@@ -53,18 +52,12 @@ class AssetTestCase extends CakeTestCase {
 
   function testInstances() {
     $this->assertTrue(is_a($this->Asset, 'AssetHelper'));
-    $this->assertTrue(is_a($this->Asset->Javascript, 'JavascriptHelper'));
     $this->assertTrue(is_a($this->Asset->Html, 'HtmlHelper'));
     $this->assertTrue(is_a($this->View, 'View'));
     $this->assertTrue(is_a(ClassRegistry::getObject('view'), 'View'));
   }
   
   function testVendors() {
-    if(PHP5) {
-      App::import('Vendor', 'jsmin/jsmin');
-      $this->assertTrue(class_exists('JSMin'));
-    }
-    
     App::import('Vendor', 'csstidy', array('file' => 'class.csstidy.php'));
     $this->assertTrue(class_exists('csstidy'));
   }
@@ -90,11 +83,12 @@ class AssetTestCase extends CakeTestCase {
   }
   
   function testFindFileDupeName() {
+    $this->Asset->paths['js'] = $this->testAppRoot . 'webroot' . DS . 'js' . DS;
+    $this->Asset->paths['css'] = $this->testAppRoot . 'webroot' . DS . 'css' . DS;
     $asset = array('plugin' => '', 'script' => 'asset1');
     $path1 = $this->Asset->__findFile($asset, 'js');
     $path2 = $this->Asset->__findFile($asset, 'css');
-    
-    $this->AssertNotEqual($path1, $path2);
+    $this->assertNotEqual($path1, $path2);
   }
   
   function testGetFileContents() {
@@ -119,7 +113,7 @@ END;
   }
   
   function testGetFileContentsExtraPath() {
-    Configure::write('Asset.searchPaths', array($this->wwwRoot . 'js' . DS));
+    Configure::write('Asset.searchPaths', array($this->testAppRoot. 'webroot' . DS . 'js' . DS));
     $asset = array('plugin' => '', 'script' => 'open_source_with_js_and_css/style');
     $contents = $this->Asset->__getFileContents($asset, 'css');
     $expected = <<<END
@@ -178,13 +172,13 @@ END;
     $origFileName = $files[0];
 
     sleep(1);
-    $touched = touch($this->wwwRoot . 'js' . DS . 'script1.js');
+    $touched = touch($this->testAppRoot . DS . 'webroot' . DS . 'js' . DS . 'script1.js');
     $this->assertTrue($touched);
     
     $js = array(array('plugin' => '', 'script' => 'script1'),
                 array('plugin' => '', 'script' => 'script2'),
                 array('plugin' => 'asset', 'script' => 'script3'));
-    
+
     $this->Asset->checkTs = true;
     $fileName = $this->Asset->__process('js', $js);
     $this->assertNotEqual($origFileName, $fileName);
@@ -287,10 +281,8 @@ END;
                       '<script type="text/javascript" src="/js/script2.js"></script>',
                       '<script type="text/javascript" src="/asset/js/script3.js"></script>'
     );
-    
     $scripts = $this->Asset->scripts_for_layout('js');
     $expected = '/<script type="text\/javascript" src="\/cjs\/script1_script2_script3_[0-9]{10}.js"><\/script>/';
-                
     $this->assertPattern($expected, $scripts);
   }
   
