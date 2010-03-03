@@ -200,7 +200,6 @@ class AssetHelper extends Helper {
 
 			//an original file is newer.	need to rebuild
 			if ($latest_ts > $packed_ts) {
-
 				unlink($this->paths['wwwRoot'] . $this->cachePaths[$type] . DS . $fileName);
 				$fileName = null;
 			}
