@@ -91,7 +91,7 @@ class AssetHelper extends Helper {
 
 			switch($asset['type']) {
 				case 'js':
-					$processed = $this->__process($asset['type'], $asset['assets']);	
+					$processed = $this->__process($asset['type'], $asset['assets']);
 					$scripts_for_layout[] = $this->Html->script('/' . $this->cachePaths['js'] . '/' . $processed, array('inline' => true));
 					break;
 				case 'css':
@@ -200,7 +200,7 @@ class AssetHelper extends Helper {
 
 			//an original file is newer.	need to rebuild
 			if ($latest_ts > $packed_ts) {
-				
+
 				unlink($this->paths['wwwRoot'] . $this->cachePaths[$type] . DS . $fileName);
 				$fileName = null;
 			}
@@ -214,7 +214,7 @@ class AssetHelper extends Helper {
 			} else if ($type == 'css') {
 				$scriptBuffer = $this->compileCss($assets);
 			}
-			
+
 			//write the file
 			$fileName = $this->__generateFileName($scripts) . '_' . $ts . '.' . $type;
 			$file = new File($this->paths['wwwRoot'] . $this->cachePaths[$type] . DS . $fileName);
