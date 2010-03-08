@@ -142,7 +142,8 @@ class AssetHelper extends Helper {
 		$prev = '';
 		$holding = array();
 		foreach ($this->View->__scripts as $i => $script) {
-			if (preg_match('/(src|href)="\/?(.*\/)?(js|css)\/(.*).(js|css)"/', $script, $match)) {
+			$webroot = preg_quote($this->View->webroot, '/');
+			if (preg_match('/(src|href)="'.$webroot.'?(.*\/)?(js|css)\/(.*).(js|css)"/', $script, $match)) {
 				$temp = array();
 				$temp['script'] = $match[4];
 				$temp['plugin'] = trim($match[2], '/');
@@ -229,6 +230,13 @@ class AssetHelper extends Helper {
 		return $fileName;
 	}
 
+	/**
+	 * Returns the compiled an minified version of the script files suplied
+	 *
+	 * @param array $assets array of asset files to process
+	 * @return string the compiled and minified version of the scripts
+	 * @access private
+	*/
 	function compileJs($assets) {
 		App::import('Lib', 'Asset.JsCompiler');
 		$contents = '';
@@ -238,16 +246,43 @@ class AssetHelper extends Helper {
 		return JsCompiler::compile($contents);
 	}
 
+	/**
+	 * Returns the compiled an minified version of the css files suplied
+	 *
+	 * @param array $assets array of asset files to process
+	 * @return string the compiled and minified version of the css
+	 * @access private
+	*/
 	function compileCss($assets) {
 		App::import('Vendor', 'csstidy', array('file' => 'class.csstidy.php'));
 		$tidy = new csstidy();
 		$tidy->load_template($this->cssCompression);
 		$contents = '';
 		foreach ($assets as $asset) {
-			$contents .= $this->__getFileContents($asset, 'css') . "\n";
+			$contents .= $this->fixReferences($this->__getFileContents($asset, 'css'), $asset) . "\n";
 		}
 		$tidy->parse($contents);
 		return $tidy->print->plain();
+	}
+
+	/**
+	 * Resolved the url() references inside the css files to protec from broken asset when storing the compiled css
+	 *
+	 * @param string $contents the contents of the css file
+	 * @param array $asset the asset file specificatin (script, plugin, type)
+	 * @return string the contents of the css file with the url() references modified
+	 * @access private
+	*/
+	protected function fixReferences($contents, $asset) {
+		if (empty($asset['plugin'])) {
+			return $contents;
+		}
+		$this->__plugin = $asset['plugin'];
+		return preg_replace_callback('/url\((\.\.\/)+([^\)]+)\)/', array($this, 'replaceReference'), $contents);
+	}
+
+	private function replaceReference($match) {
+		return 'url("'.$this->View->webroot . $this->__plugin . '/' .  $match[2]. '")';
 	}
 
 	/**
