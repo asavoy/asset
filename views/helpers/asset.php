@@ -43,9 +43,8 @@ class AssetHelper extends Helper {
 
 	//set the css compression level
 	//options: default, low_compression, high_compression, highest_compression
-	//default is no compression
-	//I like high_compression because it still leaves the file readable.
-	var $cssCompression = 'high_compression';
+	//default means no compression
+	var $cssCompression = 'highest_compression';
 
 	var $helpers = array('Html');
 	var $viewScriptCount = 0;
@@ -282,7 +281,7 @@ class AssetHelper extends Helper {
 	}
 
 	private function replaceReference($match) {
-		return 'url("'.$this->View->webroot . $this->__plugin . '/' .  $match[2]. '")';
+		return str_replace('//', '/','url("'.$this->View->webroot . $this->__plugin . '/' .  $match[2]. '")');
 	}
 
 	/**
