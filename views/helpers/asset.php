@@ -19,7 +19,7 @@ class AssetHelper extends Helper {
 
 	//there is a *minimal* perfomance hit associated with looking up the filemtimes
 	//if you clean out your cached dir (as set below) on builds then you don't need this.
-	var $checkTs = false;
+	var $checkTs = true;
 
 	//Class for localizing JS files if JS I18N plugin is installed
 	//http://github.com/mcurry/js
@@ -28,7 +28,7 @@ class AssetHelper extends Helper {
 	//the packed files are named by stringing together all the individual file names
 	//this can generate really long names, so by setting this option to true
 	//the long name is md5'd, producing a resonable length file name.
-	var $md5FileName = false;
+	var $md5FileName = true;
 
 	//you can change this if you want to store the files in a different location.
 	//this is relative to your webroot
@@ -44,7 +44,7 @@ class AssetHelper extends Helper {
 	//set the css compression level
 	//options: default, low_compression, high_compression, highest_compression
 	//default means no compression
-	var $cssCompression = 'highest_compression';
+	var $cssCompression = 'high_compression';
 
 	var $helpers = array('Html');
 	var $viewScriptCount = 0;
@@ -293,7 +293,6 @@ class AssetHelper extends Helper {
 	*/
 	function __getFileContents(&$asset, $type) {
 		$assetFile = $this->__findFile($asset, $type);
-
 		if ($assetFile) {
 			if($type == 'js' && $this->Lang && strpos($assetFile, $this->Lang->paths['source']) !== false) {
 				return $this->Lang->i18n($asset['script'] . '.js');
@@ -313,7 +312,6 @@ class AssetHelper extends Helper {
 		if (!empty($this->foundFiles[$key])) {
 			return $this->foundFiles[$key];
 		}
-
 		$paths = array($this->__getPath($type));
 		if ($searchPaths) {
 			$paths = array_merge($paths, $searchPaths);
@@ -327,17 +325,18 @@ class AssetHelper extends Helper {
 		$assetFile = '';
 		foreach ($paths as $path) {
 			$script = sprintf('%s.%s', $asset['script'], $type);
+			
 			if (is_file($path . $script) && file_exists($path . $script)) {
 				$assetFile = $path . $script;
 				break;
 			}
-
 			if (is_file($path . $type . DS . $script) && file_exists($path . $type . DS . $script)) {
 				$assetFile = $path . $type . DS . $script;
 				break;
 			}
 		}
-
+		
+		
 		if($type == 'js' && !$assetFile && $this->Lang) {
 			$script = $this->Lang->parseFile($this->Lang->normalize($asset['script'] . '.js'));
 			if (is_file($this->Lang->paths['source'] . $script) && file_exists($this->Lang->paths['source'] . $script)) {
@@ -346,6 +345,7 @@ class AssetHelper extends Helper {
 		}
 
 		$this->foundFiles[$key] = $assetFile;
+		
 		return $assetFile;
 	}
 
